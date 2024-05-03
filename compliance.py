@@ -56,7 +56,7 @@ CONTRIB_HEADERS = ["contributionID", "cbElectionType", "cbElectionDate", "cbCont
 rows = []
 for contact_id, contributions in all_contributions.items():
     total_individual_contributions = sum(float(c["Amount"]) for c in contributions)
-    if total_individual_contributions < 100:
+    if total_individual_contributions < 100 and not any(c["Payment Method"] == "InKind" for c in contributions):
         for contribution in contributions:
             row = {
                 "contributionID": "numero-" + contribution["Contribution ID"] + "-" + "P",
