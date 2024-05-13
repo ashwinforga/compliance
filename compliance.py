@@ -132,7 +132,7 @@ for contact_id, contributions in all_contributions.items():
                 row["cbContributionCode"] = "OTH" # COM - committee, OTH - other. TODO
                 row["cbOrgName"] = contribution["First Name"]
             for k, v in row.items():
-                assert v.strip() != "", (contribution["First Name"], k, v)
+                assert v.strip() != "", (contribution, k, v)
             rows.append(row)
 
 total = sum(float(r["cbAmount"]) for r in rows)
@@ -167,6 +167,13 @@ with open('contributions-apr30.csv', 'w+') as f:
     writer.writeheader()
     for r in rows:
         if date_between(r["cbDate"], "02/01/2024", "04/30/2024"):
+            writer.writerow(r)
+
+with open('contributions-jun30.csv', 'w+') as f:
+    writer = csv.DictWriter(f, fieldnames=CONTRIB_HEADERS)
+    writer.writeheader()
+    for r in rows:
+        if date_between(r["cbDate"], "05/01/2024", "06/30/2024"):
             writer.writerow(r)
 
 # with open('report.json', 'w+') as out_file:
