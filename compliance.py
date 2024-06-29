@@ -56,8 +56,8 @@ def generate_report(start_date, end_date):
                     "cbDate": contribution["Date"],
                     "cbAmount": contribution["Amount"]
                 }
-                # for k, v in row.items():
-                #     assert v.strip() != ""
+                for k, v in row.items():
+                    assert v.strip() != ""
                 rows.append(row)
         else:
             contributions = all_contributions[contact_id]
@@ -67,7 +67,7 @@ def generate_report(start_date, end_date):
                 for i in range(0, len(contributions)):
                     if not date_before_primary(contributions[i]["Date"]):
                         # Contribution happened in general election timeline.
-                        new_contributions.append(contribution)
+                        new_contributions.append(contributions[i])
                         continue
                     amount = float(contributions[i].pop("Amount"))
                     if total_in_primary + amount <= 3300:
@@ -127,21 +127,10 @@ def generate_report(start_date, end_date):
                 else:
                     row["cbContributionCode"] = "OTH" # COM - committee, OTH - other. TODO
                     row["cbOrgName"] = contribution["First Name"]
-                # for k, v in row.items():
-                #     assert v.strip() != "", (contribution, k, v)
+                for k, v in row.items():
+                    assert v.strip() != "", (contribution, k, v)
                 rows.append(row)
 
-    total = sum(float(r["cbAmount"]) for r in rows)
-    print("total should be", 282495, "total is", total)
-
-    print(sum(float(r["cbAmount"]) for r in rows if date_between(r["cbDate"], "12/01/2023", "01/31/2024")))
-
-    print(sum(float(r["cbAmount"]) for r in rows if r["cbContributionType"] == "MOI" and date_between(r["cbDate"], "12/01/2023", "01/31/2024")))
-    print(sum(float(r["cbAmount"]) for r in rows if r["cbContributionType"] == "NIM" and date_between(r["cbDate"], "12/01/2023", "01/31/2024")))
-
-    print(sum(float(r["cbAmount"]) for r in rows if date_between(r["cbDate"], "02/01/2024", "04/30/2024")))
-
-    146303
 
     rows.sort(key = lambda r: r["contributionID"])
 
@@ -150,44 +139,31 @@ def generate_report(start_date, end_date):
 def filter_rows(rows, start_date, end_date):
     return [r for r in rows if date_between(r["cbDate"], start_date, end_date)]
 
-def generate_report_for_reporting_period(start_date, end_date):
+def write_to_file(rows, name):
+    with open(f'contributions-{name}.csv', 'w+') as f:
+        writer = csv.DictWriter(f, fieldnames=CONTRIB_HEADERS)
+        writer.writeheader()
+        for r in rows:
+            writer.writerow(r)
+
+def generate_report_for_reporting_period(start_date, end_date, name):
     rows = filter_rows(generate_report("12/01/2023", end_date), start_date, end_date)
     up_to_date_rows = filter_rows(generate_report("12/01/2023", "12/31/2024"), start_date, end_date)
     set1 = list(r["contributionID"] for r in rows)
     set2 = list(r["contributionID"] for r in up_to_date_rows)
     assert set1 == set2
+    rows_to_update = []
+    for i in range(0, len(rows)):
+        assert up_to_date_rows[i]["contributionID"] == rows[i]["contributionID"]
+        if rows[i]["cbContributionType"] == "NIM" and up_to_date_rows[i]["cbContributionType"] == "MOI":
+            up_to_date_rows[i]["AmendFlag"] = "A"
+            rows_to_update.append(up_to_date_rows[i])
+    write_to_file(rows, name)
+    write_to_file(rows_to_update, name + "-to-amend")
+    
 
 
-generate_report_for_reporting_period("12/01/2023", "01/31/2024")
-generate_report_for_reporting_period("02/01/2024", "04/30/2024")
-generate_report_for_reporting_period("05/01/2024", "06/30/2024")
-
-
-# rows = filter_rows(generate_report("12/01/2023", "12/31/2024"), "12/01/2023", "12/31/2024")
-# with open('contributions.csv', 'w+') as f:
-#     writer = csv.DictWriter(f, fieldnames=CONTRIB_HEADERS)
-#     writer.writeheader()
-#     for r in rows:
-#         writer.writerow(r)
-
-# rows = filter_rows(generate_report("12/01/2023", "01/31/2024"), "12/01/2023", "01/31/2024")
-# with open('contributions-jan31.csv', 'w+') as f:
-#     writer = csv.DictWriter(f, fieldnames=CONTRIB_HEADERS)
-#     writer.writeheader()
-#     for r in rows:
-#         writer.writerow(r)
-
-# rows = filter_rows(generate_report("02/01/2024", "04/30/2024"), "02/01/2024", "04/30/2024")
-# with open('contributions-apr30.csv', 'w+') as f:
-#     writer = csv.DictWriter(f, fieldnames=CONTRIB_HEADERS)
-#     writer.writeheader()
-#     for r in rows:
-#         writer.writerow(r)
-
-# rows = filter_rows(generate_report("05/01/2024", "06/30/2024"), "05/01/2024", "06/30/2024")
-# with open('contributions-jun30.csv', 'w+') as f:
-#     writer = csv.DictWriter(f, fieldnames=CONTRIB_HEADERS)
-#     writer.writeheader()
-#     for r in rows:
-#         writer.writerow(r)
+generate_report_for_reporting_period("12/01/2023", "01/31/2024", "jan31")
+generate_report_for_reporting_period("02/01/2024", "04/30/2024", "apr30")
+generate_report_for_reporting_period("05/01/2024", "06/30/2024", "jun30")
 
