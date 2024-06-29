@@ -49,6 +49,9 @@ for row in expenditures:
     if payee not in all_expenditures: all_expenditures[payee] = []
     all_expenditures[payee].append(row)
 
+def date_before_primary(date):
+    return date_between(date, "12/01/2023", "05/21/2024")
+
 # print(len(all_expenditures))
 
 EXP_HEADERS = ["expenditureID", "exElectionType", "exElectionDate", "exExpenditureType", "exPayeeType", "exPaymentCode", "exPaymentCodeOther", "exOrgID", "exPayeeID", "exOrgName", "exFilerID", "exFirstName", "exMiddleName", "exLastName", "exNameSuffix", "exAddress1", "exAddress2", "exCity", "exState", "exZip", "exEmployer", "exOccupation", "exOccupationOther", "exCreditCardIssuedTo", "exDate", "exAmount", "exExplanation", "exCheckNumber", "exSuppOppCan", "exSuppOppBQ", "AmendFlag", "DeleteFlag"]
@@ -63,8 +66,8 @@ for contact_id, expenditures in all_expenditures.items():
             i += 1
             row = {
                 "expenditureID": "exp-4_31_" + str(i),
-                "exElectionType": "P",
-                "exElectionDate": "05/21/2024", # 11/05/2024
+                "exElectionType": "P" if date_before_primary(expenditure["Date"]) else "G",
+                "exElectionDate": "05/21/2024" if date_before_primary(expenditure["Date"]) else "11/05/2024",
                 "exExpenditureType": "NIM", # NIM - non-itemized.
                 "exPaymentCode": "OTH", 
                 "exPaymentCodeOther": expenditure["Memo"],
@@ -83,8 +86,8 @@ for contact_id, expenditures in all_expenditures.items():
             vendor = payee_dict[payee]
             row = {
                 "expenditureID": "exp-4_31_" + str(i),
-                "exElectionType": "P",
-                "exElectionDate": "05/21/2024", # 11/05/2024
+                "exElectionType": "P" if date_before_primary(expenditure["Date"]) else "G",
+                "exElectionDate": "05/21/2024" if date_before_primary(expenditure["Date"]) else "11/05/2024",
                 "exExpenditureType": "MOI", # MOI - itemized.
                 "exPaymentCode": "OTH",
                 "exPaymentCodeOther": expenditure["Memo"],
@@ -146,4 +149,11 @@ with open('expenditures-apr30.csv', 'w+') as f:
     writer.writeheader()
     for r in rows:
         if date_between(r["exDate"], "02/01/2024", "04/30/2024"):
+            writer.writerow(r)
+
+with open('expenditures-jun30.csv', 'w+') as f:
+    writer = csv.DictWriter(f, fieldnames=EXP_HEADERS)
+    writer.writeheader()
+    for r in rows:
+        if date_between(r["exDate"], "05/01/2024", "06/30/2024"):
             writer.writerow(r)

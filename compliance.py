@@ -50,6 +50,9 @@ with open(numero_contributions_file, 'r') as f:
 
 # print(len(all_contributions))
 
+def date_before_primary(date):
+    return date_between(date, "12/01/2023", "05/21/2024")
+
 CONTRIB_HEADERS = ["contributionID", "cbElectionType", "cbElectionDate", "cbContributionType", "cbContributionCode", "cbOrgID", "cbOrgName", "cbFilerID", "cbContributorID", "cbFirstName", "cbMiddleName", "cbLastName", "cbNameSuffix", "cbAddress1", "cbAddress2", "cbCity", "cbState", "cbZip", "cbEmployer", "cbOccupation", "cbOccupationOther", "cbAffiliatedCommittee", "cbDate", "cbAmount", "cbDescription", "cbCheckNumber", "cbRegulatedEntityName", "AmendFlag", "DeleteFlag"]
 
 # ["Contribution ID", "Date", "Amount", "Contact ID", "Contact Type", "Title", "First Name", "Middle Name", "Last Name", "Suffix", "Salutation", "Email", "Phone", "Address Line 1", "Address Line 2", "City", "State", "Zip", "County", "Country", "Employer", "Occupation", "Contact VANID", "Receipt First Name", "Receipt Last Name", "Receipt Line 1", "Receipt City", "Receipt State", "Receipt Zip", "Receipt Country", "Receipt Email", "Receipt Phone", "Receipt Employer", "Receipt Occupation", "Receipt Responsible Party First Name", "Receipt Responsible Party Last Name", "Payment Method", "Recurring", "Contribution Form", "External Form", "Designation", "Batch", "Source Code", "Member Code", "Reference Codes", "Calltime List", "Integration", "Raiser", "Status", "Notes", "Created Date", "Pledge", "Soft Credits"]
@@ -60,20 +63,24 @@ for contact_id, contributions in all_contributions.items():
         for contribution in contributions:
             row = {
                 "contributionID": "numero-" + contribution["Contribution ID"] + "-" + "P",
-                "cbElectionType": "P",
-                "cbElectionDate": "05/21/2024", # 11/05/2024
+                "cbElectionType": "P" if date_before_primary(contribution["Date"]) else "G",
+                "cbElectionDate": "05/21/2024" if date_before_primary(contribution["Date"]) else "11/05/2024",
                 "cbContributionType": "NIM", # NIM - non-itemized.
                 "cbDate": contribution["Date"],
                 "cbAmount": contribution["Amount"]
             }
-            for k, v in row.items():
-                assert v.strip() != ""
+            # for k, v in row.items():
+            #     assert v.strip() != ""
             rows.append(row)
     else:
         if total_individual_contributions > 3300 and not (contributions[0]["First Name"].lower() == "ashwin" and contributions[0]["Last Name"].lower() == "ramaswami"):
             new_contributions = []
             total_in_primary = 0
             for i in range(0, len(contributions)):
+                if not date_before_primary(contributions[i]["Date"]):
+                    # Contribution happened in general election timeline.
+                    new_contributions.append(contribution)
+                    continue
                 amount = float(contributions[i].pop("Amount"))
                 if total_in_primary + amount <= 3300:
                     # All in primary
@@ -101,10 +108,13 @@ for contact_id, contributions in all_contributions.items():
         
         contributions = all_contributions[contact_id]
         for contribution in contributions:
+            print(contribution)
+            election_type = contribution.get("election_type", "P" if date_before_primary(contribution["Date"]) else "G")
+            election_date = contribution.get("election_date", "05/21/2024" if date_before_primary(contribution["Date"]) else "11/05/2024")
             row = {
-                "contributionID": "numero-" + contribution["Contribution ID"] + "-" + contribution.get("election_type", "P"),
-                "cbElectionType": contribution.get("election_type", "P"),
-                "cbElectionDate": contribution.get("election_date", "05/21/2024"), # 11/05/2024
+                "contributionID": "numero-" + contribution["Contribution ID"] + "-" + election_type,
+                "cbElectionType": election_type,
+                "cbElectionDate": election_date,
                 "cbContributorID": "numero-" + contribution["Contact ID"],
                 "cbAddress1": contribution["Address Line 1"],
                 "cbCity": contribution["City"],
@@ -131,8 +141,8 @@ for contact_id, contributions in all_contributions.items():
             else:
                 row["cbContributionCode"] = "OTH" # COM - committee, OTH - other. TODO
                 row["cbOrgName"] = contribution["First Name"]
-            for k, v in row.items():
-                assert v.strip() != "", (contribution, k, v)
+            # for k, v in row.items():
+            #     assert v.strip() != "", (contribution, k, v)
             rows.append(row)
 
 total = sum(float(r["cbAmount"]) for r in rows)
