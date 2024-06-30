@@ -39,12 +39,8 @@ def generate_report(start_date, end_date):
             if contact_id not in all_contributions: all_contributions[contact_id] = []
             all_contributions[contact_id].append(row)
 
-    # print(len(all_contributions))
-
-    # ["Contribution ID", "Date", "Amount", "Contact ID", "Contact Type", "Title", "First Name", "Middle Name", "Last Name", "Suffix", "Salutation", "Email", "Phone", "Address Line 1", "Address Line 2", "City", "State", "Zip", "County", "Country", "Employer", "Occupation", "Contact VANID", "Receipt First Name", "Receipt Last Name", "Receipt Line 1", "Receipt City", "Receipt State", "Receipt Zip", "Receipt Country", "Receipt Email", "Receipt Phone", "Receipt Employer", "Receipt Occupation", "Receipt Responsible Party First Name", "Receipt Responsible Party Last Name", "Payment Method", "Recurring", "Contribution Form", "External Form", "Designation", "Batch", "Source Code", "Member Code", "Reference Codes", "Calltime List", "Integration", "Raiser", "Status", "Notes", "Created Date", "Pledge", "Soft Credits"]
     rows = []
     for contact_id, contributions in all_contributions.items():
-        # print(contributions)
         total_individual_contributions = sum(float(c["Amount"]) for c in contributions)
         if total_individual_contributions < 100 and not any(c["Payment Method"] == "InKind" for c in contributions):
             for contribution in contributions:
@@ -130,8 +126,6 @@ def generate_report(start_date, end_date):
                 for k, v in row.items():
                     assert v.strip() != "", (contribution, k, v)
                 rows.append(row)
-
-
     rows.sort(key = lambda r: r["contributionID"])
 
     return rows
