@@ -1,6 +1,11 @@
 import csv
 from datetime import datetime, timedelta
 
+"""
+Update itemized status based on later contributions
+"""
+
+
 numero_contributions_file = 'all-contributions.csv'
 CONTRIB_HEADERS = ["contributionID", "cbElectionType", "cbElectionDate", "cbContributionType", "cbContributionCode", "cbOrgID", "cbOrgName", "cbFilerID", "cbContributorID", "cbFirstName", "cbMiddleName", "cbLastName", "cbNameSuffix", "cbAddress1", "cbAddress2", "cbCity", "cbState", "cbZip", "cbEmployer", "cbOccupation", "cbOccupationOther", "cbAffiliatedCommittee", "cbDate", "cbAmount", "cbDescription", "cbCheckNumber", "cbRegulatedEntityName", "AmendFlag", "DeleteFlag"]
 
@@ -21,6 +26,17 @@ def date_before_primary(date):
 assert format_date("12/31/2024 11:59 PM") == "01/01/2025"
 assert format_date("12/31/2024 8:59 PM") == "12/31/2024"
 assert format_date("12/31/2024 10:00 AM") == "12/31/2024"
+
+contribution_id_map = {
+    "numero-36870254-P": "2384367",
+    "numero-37011610-P": "2384390",
+    "numero-37146441-P": "2384428",
+    "numero-37230489-P": "2384600",
+    "numero-37232609-P": "2384586",
+    "numero-37232691-P": "2384604",
+    "numero-37249851-P": "2393651",
+    "numero-37258462-P": "2393660"
+}
 
 # format_date = lambda x: x.split()[0]
 
@@ -52,6 +68,8 @@ def generate_report(start_date, end_date):
                     "cbDate": contribution["Date"],
                     "cbAmount": contribution["Amount"]
                 }
+                if row["contributionID"] in contribution_id_map:
+                    row["contributionID"] = contribution_id_map[row["contributionID"]]
                 for k, v in row.items():
                     assert v.strip() != ""
                 rows.append(row)
@@ -105,6 +123,8 @@ def generate_report(start_date, end_date):
                     "cbDate": contribution["Date"],
                     "cbAmount": contribution["Amount"]
                 }
+                if row["contributionID"] in contribution_id_map:
+                    row["contributionID"] = contribution_id_map[row["contributionID"]]
                 if contribution["Payment Method"] == "InKind":
                     row["cbContributionType"] = "IKD" # In-kind
                     row["cbDescription"] = contribution["Notes"]
@@ -160,4 +180,7 @@ def generate_report_for_reporting_period(start_date, end_date, name):
 generate_report_for_reporting_period("12/01/2023", "01/31/2024", "jan31")
 generate_report_for_reporting_period("02/01/2024", "04/30/2024", "apr30")
 generate_report_for_reporting_period("05/01/2024", "06/30/2024", "jun30")
+generate_report_for_reporting_period("07/01/2024", "09/30/2024", "sep30")
+generate_report_for_reporting_period("10/01/2024", "10/25/2024", "oct25")
+generate_report_for_reporting_period("10/26/2024", "12/31/2024", "dec31")
 
